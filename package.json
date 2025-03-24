@@ -37,6 +37,9 @@
     "firebase-admin": "^13.0.1",
     "nodemailer": "^6.10.0",
     "pg": "^8.13.1",
+    "playwright": "^1.51.1",
+    "playwright-extra": "^4.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.2.0",
     "tldts": "^6.1.79"
