@@ -1,11 +1,19 @@
 import { HttpService } from '@nestjs/axios';
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+    BadRequestException,
+    Injectable,
+    InternalServerErrorException,
+    Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { lastValueFrom } from 'rxjs';
 import * as cheerio from 'cheerio';
 import { AxiosError } from 'axios';
 import { ProductInfo } from 'src/interfaces/product.info';
 import { getDomainWithoutSuffix } from 'tldts';
+import { chromium } from 'playwright-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import { Browser, Page } from 'playwright';
 
 @Injectable()
 export class ScraperService {
@@ -17,31 +25,48 @@ export class ScraperService {
 
     private readonly scrapers: Record<
         string,
-        ($: cheerio.Root) => Promise<ProductInfo>
+        (page: Page) => Promise<ProductInfo>
     > = {
         amazon: this.scrapeAmazonProduct,
         mercadolivre: this.scrapeMercadoLivreProduct,
         relogioonline: this.scrapeTimeForTesting,
     };
 
-    async scrapeAmazonProduct($: cheerio.Root): Promise<ProductInfo> {
+    async getBrowserInstance(): Promise<Browser> {
         try {
-            const name = $('#productTitle').first().text().trim();
+            chromium.use(StealthPlugin());
+            return chromium.launch({ headless: true });
+        } catch (error) {
+            this.logger.error(error.message);
+            throw new InternalServerErrorException(
+                'Could not get browser instance',
+            );
+        }
+    }
+
+    async scrapeAmazonProduct(page: Page): Promise<ProductInfo> {
+        try {
+            let [name, priceWhole, priceFraction] = await Promise.all([
+                page.locator('#productTitle').first().textContent(),
+                page.locator('.a-price-whole').first().textContent(),
+                page.locator('.a-price-fraction').first().textContent(),
+            ]);
+
+            page.close();
 
             if (!name) {
                 throw new Error('Product name not found');
             }
 
-            const priceWhole = $('.a-price-whole')
-                .first()
-                .text()
-                .trim()
-                .replace(/[.]/g, '');
-            const priceFraction = $('.a-price-fraction').first().text();
+            name = name.trim();
 
             if (!priceWhole || !priceFraction) {
                 throw new Error('Product price not found or is incomplete');
             }
+
+            priceWhole = priceWhole.trim().replace(/[.]/g, '');
+
+            priceFraction = priceFraction.trim();
 
             const price: number = Number(
                 (priceWhole + priceFraction).replace(/[,]/g, '.'),
@@ -58,21 +83,26 @@ export class ScraperService {
         }
     }
 
-    async scrapeMercadoLivreProduct($: cheerio.Root): Promise<ProductInfo> {
+    async scrapeMercadoLivreProduct(page: Page): Promise<ProductInfo> {
         try {
-            const name = $('.ui-pdp-title').text().trim();
+            let [name, priceString] = await Promise.all([
+                page.locator('.ui-pdp-title').textContent(),
+                page.locator('meta[itemprop="price"]').getAttribute('content'),
+            ]);
+
+            page.close();
 
             if (!name) {
                 throw new Error('Product name not found');
             }
 
-            const priceString = $('[itemprop="price"]').attr('content')?.trim();
+            name = name.trim();
 
             if (!priceString) {
                 throw new Error('Product price not found');
             }
 
-            const price = Number(priceString);
+            const price = Number(priceString.trim());
 
             if (isNaN(price)) {
                 throw new Error('Failed to parse product price');
@@ -86,15 +116,18 @@ export class ScraperService {
         }
     }
 
-    async scrapeTimeForTesting($: cheerio.Root): Promise<ProductInfo> {
+    async scrapeTimeForTesting(page: Page): Promise<ProductInfo> {
         try {
-            const name = $('#lbl-title').text().trim();
+            let [name, priceString] = await Promise.all([
+                page.locator('#lbl-title').textContent(),
+                page.locator('#lbl-time').textContent(),
+            ]);
+
+            page.close();
 
             if (!name) {
                 throw new Error('Product name not found');
             }
-
-            const priceString = $('#lbl-time').text().trim();
 
             if (!priceString) {
                 throw new Error('Product price not found');
@@ -142,12 +175,21 @@ export class ScraperService {
         }
     }
 
-    async scrapePrice(url: string): Promise<ProductInfo> {
+    async getPage(browser: Browser, url: string): Promise<Page> {
+        const page = await browser.newPage();
+        await page.goto(url);
+        return page;
+    }
+
+    async scrapePrice(url: string, browser?: Browser): Promise<ProductInfo> {
         const hostname = getDomainWithoutSuffix(url);
 
         if (hostname && hostname in this.scrapers) {
-            const $ = await this.fetchPageHtml(url);
-            return await this.scrapers[hostname]($);
+            //const $ = await this.fetchPageHtml(url);
+            if (!browser) {
+                browser = await this.getBrowserInstance();
+            }
+            return this.scrapers[hostname](await this.getPage(browser, url));
         }
 
         throw new BadRequestException(`Invalid domain ${hostname}`);
