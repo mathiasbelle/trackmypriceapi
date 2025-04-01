@@ -58,4 +58,11 @@ export class ProductsController {
     remove(@Param('id') id: string) {
         return this.productsService.remove(+id);
     }
+
+    @Delete()
+    removeAllByUserUid(@Body() findByUserUidDto: FindByUserUidDto) {
+        return this.productsService.removeAllByUserUid(
+            findByUserUidDto.user_uid,
+        );
+    }
 }

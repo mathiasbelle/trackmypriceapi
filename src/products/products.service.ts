@@ -103,12 +103,6 @@ export class ProductsService {
             [user_uid],
         );
 
-        if (!result || result.rowCount === 0) {
-            throw new NotFoundException(
-                `No products found for user ${user_uid}.`,
-            );
-        }
-
         return result.rows;
     }
 
@@ -159,6 +153,14 @@ export class ProductsService {
             throw new NotFoundException(`Product with ID ${id} not found.`);
         }
 
+        return result.rows;
+    }
+
+    async removeAllByUserUid(user_uid: string): Promise<QueryResult[]> {
+        const result = await this.databaseService.executeQuery(
+            'DELETE FROM products WHERE user_uid = $1',
+            [user_uid],
+        );
         return result.rows;
     }
 }
