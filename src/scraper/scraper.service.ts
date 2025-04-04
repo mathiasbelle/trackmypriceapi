@@ -177,7 +177,13 @@ export class ScraperService {
 
     async getPage(browser: Browser, url: string): Promise<Page> {
         const page = await browser.newPage();
-        await page.goto(url);
+        const response = await page.goto(url);
+        if (!response.ok()) {
+            await page.close();
+            throw new BadRequestException(
+                `Error fetching: ${url}. Status: ${response.status()}`,
+            );
+        }
         return page;
     }
 
