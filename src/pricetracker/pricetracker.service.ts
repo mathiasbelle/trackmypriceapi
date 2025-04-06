@@ -11,6 +11,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { ScraperService } from 'src/scraper/scraper.service';
 import { MailerService } from 'src/mailer/mailer.service';
 import Decimal from 'decimal.js';
+import { priceChangeEmailTemplate } from 'src/mailer/html.templates';
 
 @Injectable()
 export class PricetrackerService {
@@ -61,61 +62,12 @@ export class PricetrackerService {
                             this.mailerService.sendMailWithHTML(
                                 product.user_email,
                                 `Price change for one of your products: ${name}`,
-                                `
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <title>Price Change Alert</title>
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                background-color: #f4f4f4;
-                padding: 20px;
-            }
-            .container {
-                max-width: 600px;
-                margin: 0 auto;
-                background: #ffffff;
-                padding: 20px;
-                border-radius: 10px;
-                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            }
-            .header {
-                text-align: center;
-                color: #333;
-            }
-            .price {
-                color: #d9534f;
-                font-weight: bold;
-            }
-            .button {
-                display: inline-block;
-                padding: 10px 20px;
-                margin-top: 20px;
-                color: #fff;
-                background-color: #5cb85c;
-                text-decoration: none;
-                border-radius: 5px;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h2 class="header">Price Change Alert!</h2>
-            <p>The price of <strong>${product.name}</strong> has changed.</p>
-            <p>Old Price: <span class="price">$${
-                product.current_price
-            }</span></p>
-            <p>New Price: <span class="price">$${price}</span></p>
-            <p>That's a difference of <strong>$${Decimal.sub(
-                product.current_price,
-                price,
-            )}</strong>!</p>
-            <a href="${product.url}" class="button">View Product</a>
-        </div>
-    </body>
-    </html>
-    `,
+                                priceChangeEmailTemplate(
+                                    product.name,
+                                    price,
+                                    product.current_price,
+                                    product.url,
+                                ),
                             );
                         } catch (error) {
                             this.logger.error(

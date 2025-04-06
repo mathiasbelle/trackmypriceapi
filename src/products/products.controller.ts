@@ -17,6 +17,7 @@ import { Request } from 'express';
 import { FindOneProductDto } from './dto/find.one.product.dto';
 import { FindByUserUidDto } from './dto/find.by.user.uid.dto';
 import { MailerService } from 'src/mailer/mailer.service';
+import { productAddedEmailTemplate } from 'src/mailer/html.templates';
 
 @Controller('products')
 @UseGuards(AuthGuard)
@@ -28,10 +29,10 @@ export class ProductsController {
     @Post()
     async create(@Body() createProductDto: CreateProductDto) {
         const result = await this.productsService.create(createProductDto);
-        await this.mailerService.sendMail(
+        await this.mailerService.sendMailWithHTML(
             createProductDto.user_email,
             'New product created',
-            `A new product has been created. URL: ${createProductDto.url}`,
+            productAddedEmailTemplate(createProductDto.url),
         );
     }
 
