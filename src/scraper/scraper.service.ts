@@ -29,6 +29,8 @@ export class ScraperService {
     > = {
         amazon: this.scrapeAmazonProduct,
         mercadolivre: this.scrapeMercadoLivreProduct,
+        olx: this.scrapeOLXProduct,
+        magazineluiza: this.scrapeMagazineLuizaProduct,
         relogioonline: this.scrapeTimeForTesting,
     };
 
@@ -113,6 +115,103 @@ export class ScraperService {
             return { name, price };
         } catch (error) {
             throw new Error('Could not scrape Mercado Livre product');
+        }
+    }
+
+    async scrapeOLXProduct(page: Page): Promise<ProductInfo> {
+        try {
+            let [name, priceString] = await Promise.all([
+                page
+                    .locator(
+                        '.olx-text.olx-text--title-medium.olx-text--block.ad__sc-1l883pa-2.bdcWAn',
+                    )
+                    .first()
+                    .textContent(),
+                page
+                    .locator('.olx-text.olx-text--title-large.olx-text--block')
+                    .first()
+                    .textContent(),
+            ]);
+
+            page.close();
+
+            if (!name) {
+                throw new Error('Product name not found');
+            }
+
+            name = name.trim();
+
+            if (!priceString) {
+                throw new Error('Product price not found');
+            }
+
+            priceString = priceString.trim();
+
+            const price = Number(
+                priceString.replace(/R\$ ?/, '').replace(',', '.'),
+            );
+
+            if (isNaN(price)) {
+                throw new Error('Failed to parse product price');
+            }
+
+            //console.log(name);
+            //console.log(price);
+
+            return { name, price };
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async scrapeMagazineLuizaProduct(page: Page): Promise<ProductInfo> {
+        try {
+            let [name, priceString] = await Promise.all([
+                page
+                    .locator('h1[data-testid="heading-product-title"]')
+                    .first()
+                    .textContent(),
+                page
+                    .locator('[data-testid="price-value"]')
+                    .first()
+                    .evaluate((el) => {
+                        return Array.from(el.childNodes)
+                            .filter((node) => node.nodeType === Node.TEXT_NODE)
+                            .map((node) => node.textContent.trim())
+                            .join('');
+                    }),
+            ]);
+            console.log(priceString);
+
+            page.close();
+
+            if (!name) {
+                throw new Error('Product name not found');
+            }
+
+            name = name.trim();
+
+            if (!priceString) {
+                throw new Error('Product price not found');
+            }
+
+            const price = Number(
+                priceString
+                    .replace(/R\$\s?/, '')
+                    .replace('.', '')
+                    .replace(',', '.'),
+            );
+
+            if (isNaN(price)) {
+                throw new Error('Failed to parse product price');
+            }
+
+            // console.log(name);
+            // console.log(price);
+
+            return { name, price };
+        } catch (error) {
+            throw error;
         }
     }
 
