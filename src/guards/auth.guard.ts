@@ -16,6 +16,9 @@ export class AuthGuard implements CanActivate {
                 return false;
             }
             const decodedToken = await app.auth().verifyIdToken(token);
+            if (!request.body) {
+                request.body = {};
+            }
             request.user = decodedToken;
             request.body.user_uid = decodedToken.uid;
             request.body.user_email = decodedToken.email;
