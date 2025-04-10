@@ -31,6 +31,17 @@ export class ProductsService {
      */
     async create(createProductDto: CreateProductDto): Promise<QueryResult[]> {
         try {
+            const rowCount = await this.databaseService.executeQuery(
+                'SELECT COUNT(*) FROM products WHERE user_uid = $1',
+                [createProductDto.user_uid],
+            );
+
+            if (rowCount.rows[0].count >= 15) {
+                throw new BadRequestException(
+                    'You have reached the maximum number of products.',
+                );
+            }
+
             const scrapedData = await this.scraperService.scrapePrice(
                 createProductDto.url,
             );
