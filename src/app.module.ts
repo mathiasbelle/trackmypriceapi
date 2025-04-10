@@ -10,10 +10,20 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { PricetrackerModule } from './pricetracker/pricetracker.module';
 import { ScraperModule } from './scraper/scraper.module';
 import { MailerModule } from './mailer/mailer.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
     imports: [
         ConfigModule.forRoot({ isGlobal: true }),
+        ThrottlerModule.forRoot({
+            throttlers: [
+                {
+                    ttl: 60000,
+                    limit: 60,
+                },
+            ],
+        }),
         ScheduleModule.forRoot(),
         DatabaseModule,
         UsersModule,
@@ -23,6 +33,6 @@ import { MailerModule } from './mailer/mailer.module';
         MailerModule,
     ],
     controllers: [AppController, UsersController],
-    providers: [AppService],
+    providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}
