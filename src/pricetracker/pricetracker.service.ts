@@ -17,16 +17,16 @@ export class PricetrackerService {
     ) {}
 
     /**
-     * Gets all products in the database that haven't been checked in the last 7 minutes.
+     * Gets all products in the database that haven't been checked in the last 6 hours.
      * @returns A promise that resolves to the result of the query.
      */
     getProductsToTrack() {
         return this.databaseService.executeQuery(
-            `SELECT * FROM products WHERE last_checked_at < NOW() - INTERVAL '7 MINUTES'`,
+            `SELECT * FROM products WHERE last_checked_at < NOW() - INTERVAL '6 HOURS'`,
         );
     }
 
-    @Cron(CronExpression.EVERY_MINUTE)
+    @Cron(CronExpression.EVERY_HOUR)
     /**
      * Tracks the price of all products in the database, and sends an email if the price changes.
      *
