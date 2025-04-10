@@ -12,6 +12,7 @@ import { ScraperService } from 'src/scraper/scraper.service';
 import { MailerService } from 'src/mailer/mailer.service';
 import Decimal from 'decimal.js';
 import { priceChangeEmailTemplate } from 'src/mailer/html.templates';
+import { setTimeout } from 'timers/promises';
 
 @Injectable()
 export class PricetrackerService {
@@ -43,12 +44,18 @@ export class PricetrackerService {
      */
     async trackProducts() {
         const products = (await this.getProductsToTrack()).rows;
+        const browser = await this.scraperService.getBrowserInstance();
 
         const results = await Promise.allSettled(
             products.map(async (product) => {
                 try {
+                    // Random delay between 1 and 7 seconds so that the requests don't all happen at the same time
+                    await setTimeout(Math.floor(1000 + Math.random() * 6000));
                     const { name, price } =
-                        await this.scraperService.scrapePrice(product.url);
+                        await this.scraperService.scrapePrice(
+                            product.url,
+                            browser,
+                        );
                     if (price < Number(product.current_price)) {
                         this.databaseService.executeQuery(
                             `UPDATE products SET current_price = $1, last_checked_at = NOW() WHERE id = $2`,
