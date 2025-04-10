@@ -49,29 +49,6 @@ export class DatabaseService implements OnModuleInit {
                 }
             }
 
-            // try {
-            //     await client.query(
-            //         `CREATE TYPE user_role AS ENUM ('${Role.ADMIN}', '${Role.USER}');`,
-            //     );
-            // } catch (error) {
-            //     if (error.code !== '42710') {
-            //         // 42710: duplicate_object
-            //         throw error;
-            //     }
-            // }
-
-            //     await client.query(`
-            //     CREATE TABLE IF NOT EXISTS users (
-            //       id SERIAL PRIMARY KEY,
-            //       role user_role NOT NULL DEFAULT '${Role.USER}',
-            //       name VARCHAR(255) NOT NULL,
-            //       email VARCHAR(255) NOT NULL UNIQUE,
-            //       password VARCHAR(255) NOT NULL,
-            //       created_at TIMESTAMPTZ DEFAULT NOW(),
-            //       updated_at TIMESTAMPTZ DEFAULT NOW()
-            //     );
-            //   `);
-
             await client.query(`
             CREATE TABLE IF NOT EXISTS products (
               id SERIAL PRIMARY KEY,

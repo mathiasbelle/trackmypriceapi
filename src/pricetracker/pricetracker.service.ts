@@ -1,16 +1,8 @@
-import { HttpService } from '@nestjs/axios';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { lastValueFrom } from 'rxjs';
-import * as cheerio from 'cheerio';
-import { AxiosError } from 'axios';
-import { ProductInfo } from 'src/interfaces/product.info';
-import { getDomainWithoutSuffix } from 'tldts';
 import { DatabaseService } from 'src/database/database.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ScraperService } from 'src/scraper/scraper.service';
 import { MailerService } from 'src/mailer/mailer.service';
-import Decimal from 'decimal.js';
 import { priceChangeEmailTemplate } from 'src/mailer/html.templates';
 import { setTimeout } from 'timers/promises';
 
@@ -104,44 +96,5 @@ export class PricetrackerService {
                 results.filter((r) => r.status === 'rejected').length
             }`,
         );
-
-        // for (const product of products) {
-        //     try {
-        //         const { name, price } = await this.scraperService.scrapePrice(
-        //             product.url,
-        //         );
-        //         this.logger
-        //             .debug(`Original Product: ${product.name} - Price: ${price}
-        //         New Product: ${name} - Price: ${price}\n`);
-        //         if (Number(product.current_price) !== price) {
-        //             this.databaseService.executeQuery(
-        //                 `UPDATE products SET current_price = $1, last_checked_at = NOW() WHERE id = $2`,
-        //                 [price, product.id],
-        //             );
-        //             this.mailerService.sendMail(
-        //                 product.user_email,
-        //                 `Price change for one of your products: ${name}`,
-        //                 `The price of ${product.name} has changed from ${
-        //                     product.current_price
-        //                 } to ${price}.
-        //                 Thats a difference of ${Decimal.sub(
-        //                     product.current_price,
-        //                     price,
-        //                 )}.
-        //                 URL: ${product.url}`,
-        //             );
-        //         }
-        //         await this.databaseService.executeQuery(
-        //             `UPDATE products SET last_checked_at = NOW() WHERE id = $1`,
-        //             [product.id],
-        //         );
-        //     } catch (error) {
-        //         if (error instanceof BadRequestException) {
-        //             this.logger.error(
-        //                 `Error tracking product ID ${product.id}: ${error.message}`,
-        //             );
-        //         }
-        //     }
-        // }
     }
 }

@@ -181,7 +181,7 @@ export class ScraperService {
                             .join('');
                     }),
             ]);
-            console.log(priceString);
+            // console.log(priceString);
 
             page.close();
 
@@ -238,7 +238,7 @@ export class ScraperService {
                 throw new Error('Failed to parse product price');
             }
 
-            console.log(name, price);
+            // console.log(name, price);
             return { name, price };
         } catch (error) {
             throw new Error('Could not scrape Time product');

@@ -8,7 +8,6 @@ export class AuthGuard implements CanActivate {
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest();
         const { authorization } = request.headers;
-        console.log(authorization);
         try {
             const app = this.admin.setup();
             const token = authorization.split(' ')[1];
