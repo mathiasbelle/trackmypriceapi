@@ -34,6 +34,12 @@ export class ScraperService {
         relogioonline: this.scrapeTimeForTesting,
     };
 
+    /**
+     * Gets a headless instance of the chromium browser.
+     *
+     * @returns A promise that resolves to the browser instance.
+     * @throws InternalServerErrorException if there's a problem with the browser.
+     */
     async getBrowserInstance(): Promise<Browser> {
         try {
             chromium.use(StealthPlugin());
@@ -46,6 +52,13 @@ export class ScraperService {
         }
     }
 
+    /**
+     * Scrapes the product title and price from an Amazon product page.
+     *
+     * @param page The page object of the Amazon product page.
+     * @returns A promise that resolves to the product title and price.
+     * @throws Error if the scraper fails to find the product title or price.
+     */
     async scrapeAmazonProduct(page: Page): Promise<ProductInfo> {
         try {
             let [name, priceWhole, priceFraction] = await Promise.all([
@@ -85,6 +98,13 @@ export class ScraperService {
         }
     }
 
+    /**
+     * Scrapes the product title and price from a Mercado Livre product page.
+     *
+     * @param page The page object of the Mercado Livre product page.
+     * @returns A promise that resolves to the product title and price.
+     * @throws Error if the scraper fails to find the product title or price.
+     */
     async scrapeMercadoLivreProduct(page: Page): Promise<ProductInfo> {
         try {
             let [name, priceString] = await Promise.all([
@@ -118,6 +138,13 @@ export class ScraperService {
         }
     }
 
+    /**
+     * Scrapes the product title and price from an OLX product page.
+     *
+     * @param page The page object of the OLX product page.
+     * @returns A promise that resolves to the product title and price.
+     * @throws Error if the scraper fails to find the product title or price.
+     */
     async scrapeOLXProduct(page: Page): Promise<ProductInfo> {
         try {
             let [name, priceString] = await Promise.all([
@@ -163,6 +190,15 @@ export class ScraperService {
             throw error;
         }
     }
+
+    /**
+     * Scrapes the product title and price from a Magazine Luiza product page.
+     *
+     * @param page The page object of the Magazine Luiza product page.
+     * @returns A promise that resolves to an object containing the product title and price.
+     * @throws Error if the scraper fails to find the product title or price,
+     *         or if there's an error parsing the price.
+     */
 
     async scrapeMagazineLuizaProduct(page: Page): Promise<ProductInfo> {
         try {
@@ -215,6 +251,13 @@ export class ScraperService {
         }
     }
 
+    /**
+     * Scrapes the product title and price from a page containing the current time, for testing purposes.
+     *
+     * @param page The page object of the Time for Testing product page.
+     * @returns A promise that resolves to the product title and price.
+     * @throws Error if the scraper fails to find the product title or price.
+     */
     async scrapeTimeForTesting(page: Page): Promise<ProductInfo> {
         try {
             let [name, priceString] = await Promise.all([
@@ -245,6 +288,13 @@ export class ScraperService {
         }
     }
 
+    /**
+     * Fetches the HTML content of a page using the HTTP service.
+     *
+     * @param url The URL of the page to fetch.
+     * @returns A promise that resolves to a Cheerio root element, representing the HTML content of the page.
+     * @throws BadRequestException if the page cannot be fetched.
+     */
     async fetchPageHtml(url: string): Promise<cheerio.Root> {
         try {
             const res = await lastValueFrom(
@@ -274,6 +324,14 @@ export class ScraperService {
         }
     }
 
+    /**
+     * Opens a new browser page and navigates to the given URL.
+     *
+     * @param browser The browser instance to use.
+     * @param url The URL to navigate to.
+     * @returns A promise that resolves to the page object once the navigation is complete.
+     * @throws BadRequestException if the navigation fails.
+     */
     async getPage(browser: Browser, url: string): Promise<Page> {
         const page = await browser.newPage();
         const response = await page.goto(url);
@@ -285,6 +343,15 @@ export class ScraperService {
         }
         return page;
     }
+
+    /**
+     * Scrapes the product information, including the title and price, from a given URL.
+     *
+     * @param url The URL of the product page to scrape.
+     * @param browser (Optional) An existing browser instance to use for scraping.
+     * @returns A promise that resolves to the product information, including name and price.
+     * @throws BadRequestException if the URL domain is not supported.
+     */
 
     async scrapePrice(url: string, browser?: Browser): Promise<ProductInfo> {
         const hostname = getDomainWithoutSuffix(url);
