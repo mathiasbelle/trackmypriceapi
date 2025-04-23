@@ -156,12 +156,12 @@ export class ProductsService {
         let values = [];
 
         if (updateProductDto.current_price) {
-            queryParams += `current_price = $${paramIndex++} `;
+            queryParams += `current_price = $${paramIndex++}`;
             values.push(updateProductDto.current_price);
         }
         if (updateProductDto.last_checked_at) {
             if (queryParams) queryParams += ', ';
-            queryParams += `last_checked_at = $${paramIndex++} `;
+            queryParams += `last_checked_at = $${paramIndex++}`;
             values.push(updateProductDto.last_checked_at);
         }
         if (!queryParams) {
@@ -171,7 +171,7 @@ export class ProductsService {
 
         try {
             const result = await this.databaseService.executeQuery(
-                `UPDATE products SET ${queryParams} WHERE id = $${paramIndex}`,
+                `UPDATE products SET ${queryParams} WHERE id = $${paramIndex} RETURNING *`,
                 values,
             );
 
