@@ -1,7 +1,7 @@
 import { IsEmail, IsUrl } from 'class-validator';
 
 export class CreateProductDto {
-    @IsUrl({ protocols: ['http', 'https'] })
+    @IsUrl({ protocols: ['https'] })
     url: string;
 
     user_uid: string;
