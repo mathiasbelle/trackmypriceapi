@@ -188,7 +188,7 @@ export class ProductsService {
      * Removes a product from the database by its ID.
      *
      * @param id - The ID of the product to be removed.
-     * @returns A promise that resolves to an array of the deleted product's information.
+     * @returns A promise that resolves to an empty array.
      * @throws NotFoundException if no product is found with the given ID.
      */
 
@@ -209,7 +209,7 @@ export class ProductsService {
      * Removes all products from the database that belong to a given user.
      *
      * @param user_uid - The user's unique identifier.
-     * @returns A promise that resolves to an array of the deleted product's information.
+     * @returns A promise that resolves to an empty array.
      */
     async removeAllByUserUid(user_uid: string): Promise<QueryResult[]> {
         const result = await this.databaseService.executeQuery(
