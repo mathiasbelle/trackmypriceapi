@@ -78,7 +78,7 @@ describe('ProductsService', () => {
 
             mockScraperService.scrapePrice.mockResolvedValueOnce({
                 name: productMock.name,
-                price: productMock.price,
+                price: productMock.current_price,
             });
 
             const result = await service.create(productMock);
