@@ -78,8 +78,8 @@ export class DatabaseService implements OnModuleInit {
               updated_at TIMESTAMPTZ DEFAULT NOW()
             );
           `);
-
-            await client.query(`
+            try {
+                await client.query(`
                 CREATE OR REPLACE FUNCTION update_updated_at_column()
                 RETURNS TRIGGER AS $$
                 BEGIN
@@ -93,6 +93,16 @@ export class DatabaseService implements OnModuleInit {
                 FOR EACH ROW
                 EXECUTE FUNCTION update_updated_at_column();
             `);
+            } catch (error) {
+                if (error.code === '42710') {
+                    this.logger.warn('Trigger already exists');
+                } else {
+                    this.logger.error(
+                        'Error when creating trigger',
+                        error.message,
+                    );
+                }
+            }
 
             this.logger.log('Tables checked and created.');
         } catch (error) {
