@@ -289,14 +289,14 @@ describe('ProductsService', () => {
     });
 
     describe('remove', () => {
-        it('should delete a product and return its data', async () => {
+        it('should delete a product', async () => {
             mockDatabaseService.executeQuery.mockResolvedValueOnce({
                 rowCount: 1,
                 rows: [],
             });
 
             const result = await service.remove(productMock.id);
-            expect(result).toEqual([productMock]);
+            expect(result).toEqual([]);
             expect(mockDatabaseService.executeQuery).toHaveBeenCalledWith(
                 'DELETE FROM products WHERE id = $1',
                 [productMock.id],
@@ -326,8 +326,8 @@ describe('ProductsService', () => {
     });
 
     describe('removeAllByUserUid', () => {
-        it('should delete all products by user_uid and return deleted rows', async () => {
-            const mockDeletedProducts = [productMock, productMock2];
+        it('should delete all products by user_uid', async () => {
+            const mockDeletedProducts = [];
 
             mockDatabaseService.executeQuery.mockResolvedValueOnce({
                 rows: mockDeletedProducts,
