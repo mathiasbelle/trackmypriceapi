@@ -175,7 +175,10 @@ export class ScraperService {
             priceString = priceString.trim();
 
             const price = Number(
-                priceString.replace(/R\$ ?/, '').replace(',', '.'),
+                priceString
+                    .replace(/R\$ ?/, '')
+                    .replace('.', '')
+                    .replace(',', '.'),
             );
 
             if (isNaN(price)) {
@@ -210,14 +213,8 @@ export class ScraperService {
                 page
                     .locator('[data-testid="price-value"]')
                     .first()
-                    .evaluate((el) => {
-                        return Array.from(el.childNodes)
-                            .filter((node) => node.nodeType === Node.TEXT_NODE)
-                            .map((node) => node.textContent.trim())
-                            .join('');
-                    }),
+                    .textContent(),
             ]);
-            // console.log(priceString);
 
             page.close();
 
@@ -233,9 +230,11 @@ export class ScraperService {
 
             const price = Number(
                 priceString
+                    .replace('ou', '')
                     .replace(/R\$\s?/, '')
                     .replace('.', '')
-                    .replace(',', '.'),
+                    .replace(',', '.')
+                    .trim(),
             );
 
             if (isNaN(price)) {
