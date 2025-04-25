@@ -1,18 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DatabaseService } from './database.service';
-import { Pool } from 'pg';
+import { InternalServerErrorException } from '@nestjs/common';
+import { Pool, QueryResult } from 'pg';
+import { productMock } from 'src/mocks/product.mock';
 
 describe('DatabaseService', () => {
     let service: DatabaseService;
-    let mockPool: Partial<Pool>;
+    let poolMock: Partial<Pool>;
 
     beforeEach(async () => {
-        mockPool = {
+        poolMock = {
             query: jest.fn(),
-            connect: jest.fn().mockResolvedValue({
-                query: jest.fn(),
-                release: jest.fn(),
-            }),
         };
 
         const module: TestingModule = await Test.createTestingModule({
@@ -20,7 +18,7 @@ describe('DatabaseService', () => {
                 DatabaseService,
                 {
                     provide: 'DATABASE_POOL',
-                    useValue: mockPool,
+                    useValue: poolMock,
                 },
             ],
         }).compile();
@@ -32,27 +30,43 @@ describe('DatabaseService', () => {
         expect(service).toBeDefined();
     });
 
-    it('should execute a query successfully', async () => {
-        const query = 'SELECT * FROM users';
-        const result = { rows: [{ id: 1, email: 'test@example.com' }] };
+    describe('executeQuery', () => {
+        it('should execute query successfully', async () => {
+            const expectedResult: QueryResult = {
+                command: 'SELECT',
+                rowCount: 1,
+                oid: null,
+                fields: [],
+                rows: [productMock],
+            };
 
-        mockPool.query = jest.fn().mockResolvedValue(result);
+            (poolMock.query as jest.Mock).mockResolvedValue(expectedResult);
 
-        const response = await service.executeQuery(query);
-        expect(response).toEqual(result.rows);
-        expect(mockPool.query).toHaveBeenCalledWith(query, undefined);
-    });
+            const result = await service.executeQuery(
+                'SELECT * FROM users WHERE id = $1',
+                [productMock.id],
+            );
 
-    it('should create tables on module initialization', async () => {
-        const mockClient = {
-            query: jest.fn(),
-            release: jest.fn(),
-        };
+            expect(poolMock.query).toHaveBeenCalledWith(
+                'SELECT * FROM users WHERE id = $1',
+                [productMock.id],
+            );
+            expect(result).toEqual(expectedResult);
+        });
 
-        mockPool.connect = jest.fn().mockResolvedValue(mockClient);
+        it('should throw InternalServerErrorException on query failure', async () => {
+            (poolMock.query as jest.Mock).mockRejectedValue(
+                new InternalServerErrorException(),
+            );
 
-        await service.onModuleInit();
-        expect(mockClient.query).toHaveBeenCalledTimes(2);
-        expect(mockClient.release).toHaveBeenCalled();
+            await expect(
+                service.executeQuery('SELECT * FROM invalid_table'),
+            ).rejects.toThrow(InternalServerErrorException);
+
+            expect(poolMock.query).toHaveBeenCalledWith(
+                'SELECT * FROM invalid_table',
+                undefined,
+            );
+        });
     });
 });

@@ -31,6 +31,17 @@ export class ProductsService {
      */
     async create(createProductDto: CreateProductDto): Promise<QueryResult[]> {
         try {
+            const rowCount = await this.databaseService.executeQuery(
+                'SELECT COUNT(*) FROM products WHERE user_uid = $1',
+                [createProductDto.user_uid],
+            );
+
+            if (rowCount.rows[0].count >= 15) {
+                throw new BadRequestException(
+                    'You have reached the maximum number of products.',
+                );
+            }
+
             const scrapedData = await this.scraperService.scrapePrice(
                 createProductDto.url,
             );
@@ -66,6 +77,13 @@ export class ProductsService {
         }
     }
 
+    /**
+     * Gets all products in the database.
+     *
+     * @returns A promise that resolves to an array of products in the database.
+     *
+     * @throws InternalServerErrorException if there's a problem with the database.
+     */
     async findAll(): Promise<QueryResult[]> {
         try {
             const result = await this.databaseService.executeQuery(
@@ -79,6 +97,14 @@ export class ProductsService {
             );
         }
     }
+
+    /**
+     * Retrieves a product by its ID.
+     *
+     * @param data - The data transfer object containing the product ID.
+     * @returns A promise that resolves to an array of products matching the given ID.
+     * @throws NotFoundException if no product is found with the given ID.
+     */
 
     async findOne(data: FindOneProductDto): Promise<QueryResult[]> {
         const { id } = data;
@@ -95,6 +121,13 @@ export class ProductsService {
         return result.rows;
     }
 
+    /**
+     * Retrieves all products associated with a specific user UID.
+     *
+     * @param data - The data transfer object containing the user UID.
+     * @returns A promise that resolves to an array of products associated with the given user UID.
+     */
+
     async findByUserUid(data: FindByUserUidDto): Promise<QueryResult[]> {
         const { user_uid } = data;
 
@@ -103,15 +136,17 @@ export class ProductsService {
             [user_uid],
         );
 
-        if (!result || result.rowCount === 0) {
-            throw new NotFoundException(
-                `No products found for user ${user_uid}.`,
-            );
-        }
-
         return result.rows;
     }
 
+    /**
+     * Updates a product by its ID.
+     *
+     * @param id - The ID of the product to be updated.
+     * @param updateProductDto - The data transfer object containing the data to be updated.
+     * @returns A promise that resolves to the updated product.
+     * @throws InternalServerErrorException if there's a problem with the database.
+     */
     async update(
         id: number,
         updateProductDto: UpdateProductDto,
@@ -121,12 +156,12 @@ export class ProductsService {
         let values = [];
 
         if (updateProductDto.current_price) {
-            queryParams += `current_price = $${paramIndex++} `;
+            queryParams += `current_price = $${paramIndex++}`;
             values.push(updateProductDto.current_price);
         }
         if (updateProductDto.last_checked_at) {
             if (queryParams) queryParams += ', ';
-            queryParams += `last_checked_at = $${paramIndex++} `;
+            queryParams += `last_checked_at = $${paramIndex++}`;
             values.push(updateProductDto.last_checked_at);
         }
         if (!queryParams) {
@@ -136,7 +171,7 @@ export class ProductsService {
 
         try {
             const result = await this.databaseService.executeQuery(
-                `UPDATE products SET ${queryParams} WHERE id = $${paramIndex}`,
+                `UPDATE products SET ${queryParams} WHERE id = $${paramIndex} RETURNING *`,
                 values,
             );
 
@@ -149,6 +184,14 @@ export class ProductsService {
         }
     }
 
+    /**
+     * Removes a product from the database by its ID.
+     *
+     * @param id - The ID of the product to be removed.
+     * @returns A promise that resolves to an empty array.
+     * @throws NotFoundException if no product is found with the given ID.
+     */
+
     async remove(id: number): Promise<QueryResult[]> {
         const result = await this.databaseService.executeQuery(
             'DELETE FROM products WHERE id = $1',
@@ -159,6 +202,20 @@ export class ProductsService {
             throw new NotFoundException(`Product with ID ${id} not found.`);
         }
 
+        return result.rows;
+    }
+
+    /**
+     * Removes all products from the database that belong to a given user.
+     *
+     * @param user_uid - The user's unique identifier.
+     * @returns A promise that resolves to an empty array.
+     */
+    async removeAllByUserUid(user_uid: string): Promise<QueryResult[]> {
+        const result = await this.databaseService.executeQuery(
+            'DELETE FROM products WHERE user_uid = $1',
+            [user_uid],
+        );
         return result.rows;
     }
 }
