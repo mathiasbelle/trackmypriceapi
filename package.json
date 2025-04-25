@@ -1,10 +1,10 @@
 {
   "name": "trackmypriceapi",
   "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "description": "An API for tracking prices across multiple websites.",
+  "author": "Mathias Giongo Bellé",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "MIT",
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
