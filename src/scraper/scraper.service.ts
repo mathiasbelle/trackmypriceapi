@@ -18,10 +18,16 @@ import { Browser, Page } from 'playwright';
 @Injectable()
 export class ScraperService {
     private readonly logger = new Logger(ScraperService.name);
+    private initializeStealthPlugin = true;
     constructor(
         private readonly httpService: HttpService,
         private readonly configService: ConfigService,
-    ) {}
+    ) {
+        if (this.initializeStealthPlugin) {
+            chromium.use(StealthPlugin());
+            this.initializeStealthPlugin = false;
+        }
+    }
 
     private readonly scrapers: Record<
         string,
@@ -42,7 +48,6 @@ export class ScraperService {
      */
     async getBrowserInstance(): Promise<Browser> {
         try {
-            chromium.use(StealthPlugin());
             return chromium.launch({ headless: true });
         } catch (error) {
             this.logger.error(error.message);
