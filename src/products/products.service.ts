@@ -12,6 +12,7 @@ import { QueryResult } from 'pg';
 import { FindOneProductDto } from './dto/find.one.product.dto';
 import { FindByUserUidDto } from './dto/find.by.user.uid.dto';
 import { ScraperService } from 'src/scraper/scraper.service';
+import { Product } from '../interfaces/product.interface';
 
 @Injectable()
 export class ProductsService {
@@ -29,7 +30,7 @@ export class ProductsService {
      * @throws BadRequestException if the product data can't be scraped
      * @throws InternalServerErrorException if there's a problem with the database
      */
-    async create(createProductDto: CreateProductDto): Promise<QueryResult[]> {
+    async create(createProductDto: CreateProductDto): Promise<Product[]> {
         try {
             const rowCount = await this.databaseService.executeQuery(
                 'SELECT COUNT(*) FROM products WHERE user_uid = $1',

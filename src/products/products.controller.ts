@@ -41,7 +41,11 @@ export class ProductsController {
         await this.mailerService.sendMailWithHTML(
             createProductDto.user_email,
             'New product created',
-            productAddedEmailTemplate(createProductDto.url),
+            productAddedEmailTemplate(
+                createProductDto.url,
+                result[0].name,
+                result[0].current_price,
+            ),
         );
     }
 
