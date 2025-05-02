@@ -60,7 +60,11 @@ export const priceChangeEmailTemplate = (
     </html>
 `;
 
-export const productAddedEmailTemplate = (url: string) =>
+export const productAddedEmailTemplate = (
+    url: string,
+    name: string,
+    price: number,
+) =>
     `
     <html>
     <head>
@@ -97,13 +101,20 @@ export const productAddedEmailTemplate = (url: string) =>
                 text-decoration: none;
                 border-radius: 5px;
             }
+            .product-info {
+                margin-top: 15px;
+                font-size: 16px;
+                color: #444;
+            }
         </style>
     </head>
     <body>
         <div class="container">
             <h2 class="header">New Product Added for Tracking</h2>
             <p class="message">A new product has been successfully added to your tracking list.</p>
-            <p class="message">You will receive alerts when it's price changes.</p>
+            <p class="product-info"><strong>Product Name:</strong> ${name}</p>
+            <p class="product-info"><strong>Current Price:</strong> $${price}</p>
+            <p class="message">You will receive alerts when its price changes.</p>
             <a href="${url}" class="button">View Product</a>
         </div>
     </body>
