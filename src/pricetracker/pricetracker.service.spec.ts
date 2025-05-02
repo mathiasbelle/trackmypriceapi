@@ -16,7 +16,6 @@ describe('PricetrackerService', () => {
     };
 
     const mockScraperService = {
-        getBrowserInstance: jest.fn(),
         scrapePrice: jest.fn(),
     };
 
@@ -65,23 +64,18 @@ describe('PricetrackerService', () => {
         it('should update product price and send email if price drops', async () => {
             const products = [productMock];
 
-            const mockBrowser = {};
             mockDatabaseService.executeQuery.mockResolvedValueOnce({
                 rows: products,
             });
-            mockScraperService.getBrowserInstance.mockResolvedValue(
-                mockBrowser,
-            );
+
             mockScraperService.scrapePrice.mockResolvedValue({
                 name: productMock.name,
                 price: productMock.current_price - 10,
             });
             await service.trackProducts();
 
-            expect(scraperService.getBrowserInstance).toHaveBeenCalled();
             expect(scraperService.scrapePrice).toHaveBeenCalledWith(
                 productMock.url,
-                mockBrowser,
             );
             expect(databaseService.executeQuery).toHaveBeenCalledWith(
                 `UPDATE products SET current_price = $1, last_checked_at = NOW() WHERE id = $2`,
@@ -93,13 +87,10 @@ describe('PricetrackerService', () => {
         it('should not update price or send email if price has not dropped', async () => {
             const products = [productMock2];
 
-            const mockBrowser = {};
             mockDatabaseService.executeQuery.mockResolvedValueOnce({
                 rows: products,
             });
-            mockScraperService.getBrowserInstance.mockResolvedValue(
-                mockBrowser,
-            );
+
             mockScraperService.scrapePrice.mockResolvedValue({
                 name: productMock2.name,
                 price: productMock2.current_price,
