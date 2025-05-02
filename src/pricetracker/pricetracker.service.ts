@@ -36,7 +36,6 @@ export class PricetrackerService {
      */
     async trackProducts() {
         const products = (await this.getProductsToTrack()).rows;
-        const browser = await this.scraperService.getBrowserInstance();
 
         const results = await Promise.allSettled(
             products.map(async (product) => {
@@ -44,10 +43,7 @@ export class PricetrackerService {
                     // Random delay between 1 and 7 seconds so that the requests don't all happen at the same time
                     await setTimeout(Math.floor(1000 + Math.random() * 6000));
                     const { name, price } =
-                        await this.scraperService.scrapePrice(
-                            product.url,
-                            browser,
-                        );
+                        await this.scraperService.scrapePrice(product.url);
                     if (price < Number(product.current_price)) {
                         this.databaseService.executeQuery(
                             `UPDATE products SET current_price = $1, last_checked_at = NOW() WHERE id = $2`,
@@ -89,7 +85,7 @@ export class PricetrackerService {
             }),
         );
 
-        this.logger.debug(
+        this.logger.log(
             `Tracking completed. Success: ${
                 results.filter((r) => r.status === 'fulfilled').length
             }, Failed: ${

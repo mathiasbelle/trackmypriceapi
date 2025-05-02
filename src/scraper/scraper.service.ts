@@ -13,12 +13,19 @@ import { ProductInfo } from 'src/interfaces/product.info';
 import { getDomainWithoutSuffix } from 'tldts';
 import { chromium } from 'playwright-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-import { Browser, Page } from 'playwright';
+import { Browser, BrowserContext, Page } from 'playwright';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { Mutex } from 'async-mutex';
 
 @Injectable()
 export class ScraperService {
     private readonly logger = new Logger(ScraperService.name);
     private initializeStealthPlugin = true;
+    browser: Browser | null;
+    broswerContext: BrowserContext | null;
+    private isBrowserOpen = false;
+    private browserMutex = new Mutex();
+
     constructor(
         private readonly httpService: HttpService,
         private readonly configService: ConfigService,
@@ -331,13 +338,12 @@ export class ScraperService {
     /**
      * Opens a new browser page and navigates to the given URL.
      *
-     * @param browser The browser instance to use.
      * @param url The URL to navigate to.
      * @returns A promise that resolves to the page object once the navigation is complete.
      * @throws BadRequestException if the navigation fails.
      */
-    async getPage(browser: Browser, url: string): Promise<Page> {
-        const page = await browser.newPage();
+    async getPage(url: string): Promise<Page> {
+        const page = await this.broswerContext.newPage();
         const response = await page.goto(url);
         if (!response.ok()) {
             await page.close();
@@ -352,22 +358,57 @@ export class ScraperService {
      * Scrapes the product information, including the title and price, from a given URL.
      *
      * @param url The URL of the product page to scrape.
-     * @param browser (Optional) An existing browser instance to use for scraping.
      * @returns A promise that resolves to the product information, including name and price.
      * @throws BadRequestException if the URL domain is not supported.
      */
-
-    async scrapePrice(url: string, browser?: Browser): Promise<ProductInfo> {
+    async scrapePrice(url: string): Promise<ProductInfo> {
         const hostname = getDomainWithoutSuffix(url);
 
-        if (hostname && hostname in this.scrapers) {
-            //const $ = await this.fetchPageHtml(url);
-            if (!browser) {
-                browser = await this.getBrowserInstance();
-            }
-            return this.scrapers[hostname](await this.getPage(browser, url));
+        if (!(hostname && hostname in this.scrapers)) {
+            throw new BadRequestException(`Invalid domain ${hostname}`);
         }
 
-        throw new BadRequestException(`Invalid domain ${hostname}`);
+        if (!this.browser || !this.broswerContext || !this.isBrowserOpen) {
+            await this.browserMutex.runExclusive(async () => {
+                this.browser = await chromium.launch({ headless: true });
+                this.broswerContext = await this.browser.newContext();
+                this.isBrowserOpen = true;
+            });
+        }
+        return this.scrapers[hostname](await this.getPage(url));
+    }
+
+    @Cron(CronExpression.EVERY_5_MINUTES)
+    /**
+     * Closes the browser and all its pages. This function is idempotent, i.e. it
+     * is safe to call it multiple times, even if the browser is already closed.
+     *
+     * @returns A promise that resolves when the browser is closed.
+     */
+    async closeBrowser(): Promise<void> {
+        await this.browserMutex.runExclusive(async () => {
+            try {
+                this.logger.log('Closing browser...');
+                if (
+                    !this.browser ||
+                    !this.broswerContext ||
+                    !this.isBrowserOpen
+                ) {
+                    return;
+                }
+                const openPages = this.broswerContext.pages();
+                if (openPages.length === 0) {
+                    await this.broswerContext.close();
+                    await this.browser.close();
+                    this.logger.log('Closed the browser');
+                    this.browser = null;
+                    this.broswerContext = null;
+                    this.isBrowserOpen = false;
+                }
+                return;
+            } catch (error) {
+                this.logger.error(`Error closing browser: ${error.message}`);
+            }
+        });
     }
 }
