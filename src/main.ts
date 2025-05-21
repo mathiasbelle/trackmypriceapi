@@ -14,6 +14,7 @@ async function bootstrap() {
                 ? ['log', 'debug', 'error', 'verbose', 'warn']
                 : ['error', 'warn'],
     });
+    app.enableShutdownHooks();
     app.useGlobalPipes(new ValidationPipe());
 
     const config = new DocumentBuilder()
